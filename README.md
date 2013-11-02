@@ -1,4 +1,4 @@
-# reduler - a redis-backed node.js scheduler
+# reduler - a redis-backed scheduler
 # API
 ## reduler.init(host, port)
 ## reduler.add(job, args, date, [callback])
