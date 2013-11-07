@@ -9,9 +9,14 @@ var tasks = {
 var taskId;
 
 reduler.connect();
-reduler.add('multiply', [1, 2], {}, function(err, id) {
+reduler.add('multiply', [1, 2], {date:Date.now() + 10000}, function(err, id) {
   console.log('added:', err, id);
   taskId = id;
+});
+
+reduler.add('multiply', [1, 3], {date:Date.now() + 5000}, function(err, id) {
+  console.log('added:', err, id);
+//  taskId = id;
 });
 
 reduler.run(function(id, task, args, callback) {
