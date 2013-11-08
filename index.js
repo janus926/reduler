@@ -32,7 +32,7 @@ exports.add = function(task, args, opts, callback) {
       .exec(function(err, replies) {
         if (!err && callback)
           callback(null, tid);
-      });
+n      });
   });
 };
 
@@ -48,13 +48,9 @@ exports.run = function(callback) {
   var nextRunTime = 9007199254740992;
   var timer;
 
-  function complete(result) {
-    console.log(result);
-  }
-
-  function fire() {
+  function kick() {
     var now = Date.now();
-    console.log('fire:', now);
+    console.log('kick:', now);
     mClient.multi()
       .zrangebyscore(['reduler:tasks', '-inf', now])
       .zremrangebyscore(['reduler:tasks', '-inf', now])
@@ -62,7 +58,12 @@ exports.run = function(callback) {
         replies[0].forEach(function(tid) {
           mClient.hgetall('reduler:tasks:' + tid, function(err, reply) {
             console.log('hgetall', err, reply, now);
-            callback(tid, reply.task, JSON.parse(reply.args), complete);
+            mClient.rpush(['reduler:tasks:run', ], redis.print);
+            if (reply.opts.repeats > 1) {
+              --reply.opts.repeats;
+              reply.opts.date += reply.opts.period;
+              mClient.zadd(['reduler:tasks:' + tid, reply.opts.date], redis.print);
+            }
           });
         });
       });
@@ -77,9 +78,22 @@ exports.run = function(callback) {
         if (timer !== undefined)
           clearTimeout(timer);
         console.log(nextRunTime - Date.now());
-        timer = setTimeout(fire, nextRunTime - Date.now());
+        timer = setTimeout(kick, nextRunTime - Date.now());
       }
       setTimeout(updateTimerLoop, 0);
+    });
+  })();
+};
+
+exports.worker = function(callback) {
+  var client = redis.createClient(mPort, mHost);
+
+  (function runLoop() {
+    console.log('>blpop');
+    client.blpop(['reduler:tasks:run', 0], function(err, reply) {
+      console.log('<blpop:', err, reply);
+      callback.apply(null, reply[1]);
+      setTimeout(runLoop, 0);
     });
   })();
 };

@@ -9,7 +9,5 @@ options:
 - period: the time in milliseconds of repeat cycle, default 6000.
 
 ## reduler.remove(id)
-## reduler.run(callback)
-# Event
-## success
-## failed
+## reduler.run()
+## reduler.worker(callback)
