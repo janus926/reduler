@@ -1,7 +1,7 @@
 {
   "name": "reduler",
   "version": "0.0.1",
-  "description": "Utilities for benchmarking: counter, stopwatch, and timestamp.",
+  "description": "A distributed redis-backed scheduler.",
   "main": "index.js",
   "scripts": {
     "test": "node ./test.js"

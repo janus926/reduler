@@ -1,33 +1,23 @@
 var reduler = require('./index');
 
-var tasks = {
-  'multiply': function (a, b, callback) {
-    callback(a * b);
+var funcs = {
+  'multiply': function (a, b) {
+    console.log(a * b);
   }
 }
 
-var taskId;
-
 reduler.connect();
-reduler.add('multiply', [1, 2], {date:Date.now() + 10000}, function(err, id) {
-  console.log('added:', err, id);
-  taskId = id;
+
+reduler.add('multiply', [1, 2], {date: Date.now() + 10000}, function(err, id) {
+  console.log('job added: [1, 2]', err, id);
 });
 
-reduler.add('multiply', [1, 3], {date:Date.now() + 5000}, function(err, id) {
-  console.log('added:', err, id);
-//  taskId = id;
+reduler.add('multiply', [3, 4], {date: Date.now() + 3000, repeats: 2}, function(err, id) {
+  console.log('job added: [3, 4]', err, id);
 });
 
-reduler.run(function(id, task, args, callback) {
-  console.log(id, task, args, typeof args, callback);
-  args.push(callback)
-  tasks[task].apply(undefined, args);
+reduler.run();
+
+reduler.worker(function(id, task, args) {
+  funcs[task].apply(undefined, args);
 });
-/*
-reduler.on('success', function(id, task, args, result) {
-});
-reduler.on('failed', function(id, task, args, error) {
-});
-*/
-reduler.remove(taskId);
