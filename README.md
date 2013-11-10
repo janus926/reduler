@@ -12,4 +12,4 @@ options:
 The main loop handling tasks life cycle, it should be invoked exactly one time.
 
 ## reduler.worker(callback)
-The worker can be invoked from a different process other than reduler.run().
+The worker can be invoked from a process other than reduler.run().
