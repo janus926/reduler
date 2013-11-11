@@ -1,7 +1,7 @@
 {
   "name": "reduler",
-  "version": "0.0.1",
-  "description": "A distributed redis-backed scheduler.",
+  "version": "0.0.2",
+  "description": "A redis-backed distributed scheduler.",
   "main": "index.js",
   "scripts": {
     "test": "node ./test.js"
