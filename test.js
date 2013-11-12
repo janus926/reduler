@@ -16,14 +16,14 @@ if (cluster.isMaster) {
     console.log('added: multiply [3, 4]', err, id);
   });
 } else {
-  var funcs = {
+  var tasks = {
     'multiply': function (a, b) {
       console.log(a * b);
     }
   }
 
-  reduler.worker(function(id, task, args) {
-    console.log('worker-' + cluster.worker.id, id, task, args);
-    funcs[task].apply(null, args);
+  reduler.worker(function(id, name, args) {
+    console.log('worker-' + cluster.worker.id, id, name, args);
+    tasks[name].apply(null, args);
   });
 }
