@@ -5,8 +5,8 @@
 ## reduler.connect([host], [port])
 Default host 127.0.0.1, port 6379.
 
-## reduler.add(task, args, [options], [callback])
-- `task`
+## reduler.add(name, args, [options], [callback])
+- `name`
 - `args`
 - `options` Object
   - `date` when to run the task, default is Date.now().
@@ -24,5 +24,5 @@ invocation.
 ## reduler.worker(callback)
 The worker can be invoked from a process other than the one calling
 reduler.run().  
-The callback gets three arguments `(id, task, args)`, where the task and args are
+The callback gets three arguments `(id, name, args)`, where name and args are
 the ones from reduler.add().

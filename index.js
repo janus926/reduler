@@ -14,7 +14,7 @@ exports.connect = function(_host, _port) {
   client = redis.createClient(port, host);
 };
 
-exports.add = function(task, args, opts, callback) {
+exports.add = function(name, args, opts, callback) {
   opts = opts || {};
 
   if (opts.date === undefined)
@@ -26,10 +26,7 @@ exports.add = function(task, args, opts, callback) {
 
   client.incr(['reduler:tasks:nextid'], function(err, tid) {
     client.multi()
-      .hmset([
-        'reduler:tasks:' + tid,
-        'task', task, 'args', JSON.stringify(args), 'opts', JSON.stringify(opts)
-      ])
+      .set(['reduler:tasks:' + tid, JSON.stringify([tid, name, args, opts])])
       .zadd(['reduler:tasks', opts.date, tid])
       .rpush(['reduler:tasks:new', opts.date])
       .exec(function(err, replies) {
@@ -61,26 +58,16 @@ exports.run = function() {
       .zrange(['reduler:tasks', 0, 1, 'WITHSCORES'])
       .exec(function(err, replies) {
         replies[0].forEach(function(tid) {
-          client.hgetall(['reduler:tasks:' + tid], function(err, reply) {
-            // Push to running queue.
-            client.rpush([
-              'reduler:tasks:run',
-              JSON.stringify([
-                tid,
-                reply.task,
-                JSON.parse(reply.args)
-              ])
-            ], dummy);
-            // Check is it recurrning task.
-            var opts = JSON.parse(reply.opts);
+          client.get(['reduler:tasks:' + tid], function(err, reply) {
+            client.rpush(['reduler:tasks:run', reply], dummy);
+            // Check if it is a recurrning task.
+            var task = JSON.parse(reply);
+            var opts = task[3];
             if (opts.repeats > 1) {
               --opts.repeats;
               opts.date += opts.period;
               client.multi()
-                .hmset([
-                  'reduler:tasks:' + tid,
-                  'opts', JSON.stringify(opts)
-                ])
+                .set(['reduler:tasks:' + tid, JSON.stringify(task)])
                 .zadd(['reduler:tasks', opts.date, tid])
                 .rpush(['reduler:tasks:new', opts.date])
                 .exec(dummy);
@@ -114,7 +101,9 @@ exports.worker = function(callback) {
 
   (function workerLoop() {
     bClient.blpop(['reduler:tasks:run', 0], function(err, reply) {
-      callback.apply(null, JSON.parse(reply[1]));
+      var task = JSON.parse(reply[1]);
+      task.pop();
+      callback.apply(null, task);
       setTimeout(workerLoop, 0);
     });
   })();
