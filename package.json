@@ -1,7 +1,7 @@
 {
   "name": "reduler",
-  "version": "0.0.3",
-  "description": "A redis-backed distributed scheduler.",
+  "version": "0.0.4",
+  "description": "A redis-backed distributed task scheduler.",
   "main": "index.js",
   "scripts": {
     "test": "node ./test.js"
@@ -12,7 +12,8 @@
   },
   "keywords": [
     "scheduler",
-    "redis"
+    "redis",
+    "distributed"
   ],
   "author": {
     "name": "Ting-Yu Chou",

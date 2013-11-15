@@ -1,5 +1,7 @@
 var redis = require('redis');
 
+var MAX_INT = 90071999254740992;
+
 var host;
 var port;
 var client;
@@ -17,8 +19,8 @@ exports.connect = function(_host, _port) {
 exports.add = function(name, args, opts, callback) {
   opts = opts || {};
 
-  if (opts.date === undefined)
-    opts.date = Date.now();
+  if (opts.start === undefined)
+    opts.start = Date.now();
   if (opts.repeats === undefined)
     opts.repeats = 1;
   if (opts.period === undefined)
@@ -27,8 +29,8 @@ exports.add = function(name, args, opts, callback) {
   client.incr(['reduler:tasks:nextid'], function(err, tid) {
     client.multi()
       .set(['reduler:tasks:' + tid, JSON.stringify([tid, name, args, opts])])
-      .zadd(['reduler:tasks', opts.date, tid])
-      .rpush(['reduler:tasks:new', opts.date])
+      .zadd(['reduler:tasks', opts.start, tid])
+      .rpush(['reduler:tasks:new', opts.start])
       .exec(function(err, replies) {
         if (callback)
           callback(err, tid);
@@ -45,7 +47,7 @@ exports.remove = function(tid) {
 
 exports.run = function() {
   var bClient = redis.createClient(port, host);
-  var nextTick = 9007199254740992;
+  var nextTick = MAX_INT;
   var tickTimer;
 
   function tick() {
@@ -57,28 +59,33 @@ exports.run = function() {
       .zremrangebyscore(['reduler:tasks', '-inf', now])
       .zrange(['reduler:tasks', 0, 1, 'WITHSCORES'])
       .exec(function(err, replies) {
+        // nextTick will be either the next iteration of current scheduled
+        // recurring task or the remaining one.
+        if (replies[2].length > 0) {
+          nextTick = replies[2][1];
+          tickTimer = setTimeout(tick, nextTick - Date.now());
+        } else {
+          nextTick = MAX_INT;
+        }
+
         replies[0].forEach(function(tid) {
           client.get(['reduler:tasks:' + tid], function(err, reply) {
             client.rpush(['reduler:tasks:run', reply], dummy);
-            // Check if it is a recurrning task.
             var task = JSON.parse(reply);
             var opts = task[3];
-            if (opts.repeats > 1) {
-              --opts.repeats;
-              opts.date += opts.period;
+            // If it is a recurrning task, schedule its next run.
+            if (!opts.repeats || --opts.repeats > 0) {
+              opts.start += opts.period;
               client.multi()
                 .set(['reduler:tasks:' + tid, JSON.stringify(task)])
-                .zadd(['reduler:tasks', opts.date, tid])
-                .rpush(['reduler:tasks:new', opts.date])
+                .zadd(['reduler:tasks', opts.start, tid])
+                .rpush(['reduler:tasks:new', opts.start])
                 .exec(dummy);
             } else {
               client.del(['reduler:tasks:' + tid]);
             }
           });
         });
-        // If there're still remaining tasks, set the timer for next tick().
-        if (replies[2].length > 0)
-          tickTimer = setTimeout(tick, replies[2][1] - Date.now());
       });
   }
 
