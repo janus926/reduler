@@ -3,7 +3,7 @@
 # Usage
 ```javascript
 var cluster = require('cluster');
-var reduler = require('./index');
+var reduler = require('reduler');
 var numCPUs = require('os').cpus().length;
 
 reduler.connect();
