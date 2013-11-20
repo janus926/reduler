@@ -98,7 +98,7 @@ exports.run = function() {
           clearTimeout(tickTimer);
         tickTimer = setTimeout(tick, nextTick - Date.now());
       }
-      setTimeout(timerUpdate, 0);
+      process.nextTick(timerUpdate);
     });
   })();
 };
@@ -111,7 +111,7 @@ exports.worker = function(callback) {
       var task = JSON.parse(reply[1]);
       task.pop();
       callback.apply(null, task);
-      setTimeout(workerLoop, 0);
+      process.nextTick(workerLoop);
     });
   })();
 };
